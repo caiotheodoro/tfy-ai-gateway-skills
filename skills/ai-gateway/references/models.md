@@ -169,4 +169,11 @@ integrations:
 - [ ] Did I check each model's `costs` entry for `input_cost_per_token` before adding `cost: metric: public_cost`? Omitted `cost` when absent?
 - [ ] Did every model I added come from the `list_providers` response (not from my own knowledge)?
 
+## Known behaviours (verified 2026-10-17)
+
+**OpenAI reasoning model returns 400 `Function tools with reasoning_effort are not supported for <model> in /v1/chat/completions`.**
+- Symptom: a plain `/chat/completions` request with function tools returns 400 (`error_origin_level: api_error`, `provider: openai`) that says to use `/v1/responses` or set `reasoning_effort` to `'none'`. The same message came back on `/v1/messages`.
+- Cause: the model reasons by default (reasoning tokens were reported on a request without tools). The gateway keeps a plain Chat Completions request on `/chat/completions` and the provider's validation 400 is passed through.
+- Fix: send the header `x-tfy-openai-use-responses-api: true` (served via the Responses API, 200, `resp_` id). Setting `reasoning_effort` to `low` or adding a `thinking` field was also served via Responses (200). `reasoning_effort: none` returned 200 but stayed on Chat Completions (`chatcmpl_` id). On `/v1/messages`, `output_config` effort `low` returned 200, while a top-level `reasoning_effort: none` in the body still returned 400.
+
 For more info: `search_docs` with "supported model providers", "model integrations".

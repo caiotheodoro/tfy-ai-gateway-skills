@@ -165,4 +165,11 @@ permissions:
 
 Full walkthrough: https://www.truefoundry.com/docs/platform/manage-user-roles-and-permissions
 
+## Known behaviours (verified 2026-10-17)
+
+**Granting a model of a virtual-model account to a virtual account returns 403 naming the parent account.**
+- Symptom: `You do not have permission to manage provider-account <parent-account-id>.` (403) when a virtual account caller grants a model of the account to another virtual account. A caller with no role on the model gets `You do not have permission to manage provider-integration <model-id>.`
+- Cause: use access is not enough. A caller holding `provider-integration-access` on the model and `provider-account-access` (User) on the parent account still got 403 with the parent id.
+- Fix: give the caller the `provider-account-manager` role on the parent account (or use a tenant admin). With it the same grant returned 201, and the manager could also edit the account config (200). A User on the parent account got 403 editing it.
+
 For more info: `search_docs` with "authentication PAT VAT", "virtual account management", "access control provider account", "custom role permissions", "assign role to user", "grant workspace access".

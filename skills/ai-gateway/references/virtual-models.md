@@ -145,4 +145,11 @@ integrations:
 - [ ] Did I verify target models exist via `list_provider_accounts`?
 - [ ] Are all target models referenced correctly in `accountName/modelName` format?
 
+## Known behaviours (verified 2026-10-17)
+
+**400 from a Claude Haiku target: `adaptive thinking is not supported on this model` or `This model does not support the effort parameter.`**
+- Symptom: a request with adaptive thinking or `effort` (`/v1/messages`) through a virtual model whose target is Claude Haiku returns 400 (`error_origin_level: api_error`, `provider: anthropic`). The same fields sent to a Sonnet target returned 200.
+- Cause: these are the provider's own validation errors, passed through by the gateway.
+- Fix: set `override_params` on the Haiku target with `thinking: null` and `output_config: null` (per the docs, `null` removes the parameter); both requests then returned 200. An override that only sets `temperature` did not remove them (400 again, now a temperature error).
+
 For more info: `search_docs` with "virtual models", "weight based routing", "latency based routing", "model fallback".

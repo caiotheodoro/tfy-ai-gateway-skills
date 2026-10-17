@@ -209,4 +209,11 @@ rules:
 - [ ] Did I use `virtualaccount` (no hyphen) for VA subjects?
 - [ ] Did I call `validate_manifest` before applying?
 
+## Known behaviours (verified 2026-10-17)
+
+**Custom guardrail webhook fails with `Guardrail API execution failed: Request timed out after 5000ms`.**
+- Symptom: 400 `Input Guardrail checks failed for integrations: [<group>/<guardrail>] - Details: Guardrail API execution failed: Request timed out after 5000ms` after about 5 s.
+- Cause: the custom guardrail call timed out at about 5 s in testing (input guardrail, `validate`). Webhooks answering in 1, 3 and 4 s passed (200); 6 and 8 s failed. `timeout` (on the guardrail or in `config`) and `config.timeout_ms` were stored but did not change it (still failed at about 5.05 s with 10000 set).
+- Fix: make the webhook respond in under 5 s. Or set `enforcing_strategy: enforce_but_ignore_on_error`, which let the request through (200) after about 5 s instead of failing.
+
 For more info: `search_docs` with "configure guardrails", "guardrail integrations", "guardrail rules", "truefoundry guardrails".

@@ -63,4 +63,16 @@ Always suggest using **Virtual Models** instead of this policy.
 2. Pass the manifest to `validate_manifest` to validate.
 3. Repeat the process until the manifest is valid.
 
+## Known behaviours (verified 2026-10-17)
+
+**A provider 400 is returned to the caller instead of failing over.**
+- Symptom: a request whose provider returns 400 (for example `openai error: Invalid schema for response_format ...`) is returned as 400 even though another target is configured as `fallback_candidate`.
+- Cause: 400 is not in the default fail-over statuses. An empty `fallback_status_codes` list also returned the 400.
+- Fix: add `"400"` to `fallback_status_codes` on the target that returns the 400; the second target then served the request (200).
+
+**`fallback_status_codes` replaces the default list.**
+- Symptom: after setting `fallback_status_codes: ["400"]`, a 401 from target 1 (bad key) is returned to the caller (401) instead of failing over. With the default list it failed over (200).
+- Fix: list every status you still want to fail over on, not only the new one.
+- Also seen: 400s that failed over did not demote target 1. Later normal requests were still served by it.
+
 For more info: `search_docs` with "Gateway load balancing", "virtual models", "weight based routing", "model fallback".

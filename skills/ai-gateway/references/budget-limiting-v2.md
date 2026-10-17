@@ -94,4 +94,13 @@ V1 is a single tenant-wide config with an ordered `rules[]`; V2 is one manifest 
 3. V2 has no ordering — if a V1 rule was an override above a default, exclude that group from the default with `not_in` (or use per-entity `overrides` inside `applies_to`); otherwise both limits apply and the tightest wins.
 4. Create V2 rules in `mode: audit`, verify for a full period, switch to `enforce`, then disable the V1 rules (both run in parallel during the transition).
 
+## Known behaviours (verified 2026-10-17)
+
+**Budget-exceeded response: 429 with `x-should-retry: false` and no `Retry-After`.**
+- Symptom: clients keep or stop retrying after `Budget exceeded for model <model>, budget '<rule>' (per-virtual-account: <va>); resets <timestamp>` (HTTP 429).
+- Behaviour: the response carries `x-should-retry: false` on both `/chat/completions` and the Anthropic-shaped `/v1/messages`, and no `retry-after` header. `x-tfy-applied-rules` shows `budget_limiting` with `violated: true` and the rule id. The reset time is only in the message.
+
+**Per-person budget keyed on request metadata.**
+- A budget with `applies_to.type: metadata` returned 429 to one person while another person on the same virtual account still got 200. The person has to be sent in the `X-TFY-METADATA` header (see observability.md for why the UI headers do not work).
+
 For more info: `search_docs` with "budget limiting v2", "migrate budget limiting".

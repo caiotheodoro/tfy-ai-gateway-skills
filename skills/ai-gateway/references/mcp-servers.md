@@ -254,4 +254,21 @@ Build the manifest as JSON → pass to `validate_manifest` → fix if needed →
 - [ ] Did I call `validate_manifest` before `apply_manifest`?
 - [ ] Did I call `apply_manifest` directly (not from sandbox)?
 
+## Known behaviours (verified 2026-10-17)
+
+**A virtual account owned by a team does not get the team's MCP server grants.**
+- Symptom: the virtual account's token lists no MCP servers (`total: 0`) although `ownedBy.team` is set and a role-binding exists for the team only.
+- Cause: team ownership grants nothing, and a binding with only the team as subject does not cover the account.
+- Fix: add the virtual account as a second subject of the same role-binding (subjects: the team and the `virtualaccount`). Its token then listed the server (`total: 1`). A role-binding for a `virtualaccount` on the `mcp-server-user` role was also what kept access working in the next item.
+
+**Re-applying an MCP server with `collaborators: []` removes agent grants.**
+- Symptom: an agent that could call the MCP server gets 403 `User <agent> is not authorized to access MCP server: <server>` after the server manifest is re-applied with an empty `collaborators` list.
+- Cause: the PUT returns 200 and stores `collaborators: []`, which clears grants such as `subject: agent:<name>` with `role_id: mcp-server-user`. A `virtualaccount` subject inside `collaborators` is rejected (400 `Invalid subjectType: virtualaccount`).
+- Fix: do not send `collaborators: []` when re-applying. Omit the field (the public docs say an omitted field leaves access untouched) or keep the agent entries until you move them to a `role-binding`, since `collaborators` is being retired. Access given to a virtual account through a role-binding was unaffected (still 200 after `collaborators: []`), so use a role-binding for durable grants to virtual accounts.
+
+**MCP server with OAuth2 `client_credentials` returns a gateway 500.**
+- Symptom: `initialize` and `tools/list` return HTTP 500 `OAuth2 client_credentials auth failed for MCP server <server-fqn>: client_credentials token acquisition failed` with `error_origin_level: gateway` and no `WWW-Authenticate` header.
+- Cause: the gateway could not get a token from the configured token endpoint. The `auth/status` response for the server showed `status: authentication_not_required` with `reason: Token endpoint request failed with status <code>` (400 and 404 seen). `authentication_not_required` there does not mean the server needs no auth. The error is the gateway's own 500, not an upstream 401.
+- Fix: read the status code in `reason` and check the token URL and client credentials in the server's auth config.
+
 For more info: `search_docs` with "mcp gateway", "mcp server registry", "virtual mcp server".

@@ -106,3 +106,10 @@ To construct a trace link, you need the `TraceId` from the `traces` table — qu
 - [ ] Did I add time ranges and limits to the query?
 - [ ] Did I only include the columns that are relevant to the task at hand?
 - [ ] Did I use `approx_percentile_cont` instead of `AVG` for any latency columns?
+
+## Known behaviours (verified 2026-10-17)
+
+**Per-person usage is missing when a UI sends its own user headers.**
+- Symptom: requests from a chat UI that sets per-user headers (for example `X-OpenWebUI-User`) or the body `user` field show no per-person rows in metrics grouped by metadata; the person's email appeared nowhere in the grouped rows.
+- Cause: those headers and the body `user` field did not populate request metadata, so they never produced a `metadata.<key>` group.
+- Fix: send the person in an `X-TFY-METADATA` header as JSON (string keys and values), for example `{"<key>": "<person>"}`. The metrics query grouped by `metadata.<key>` then returned a row per value with request count and cost. Requests without the header grouped under a null value.

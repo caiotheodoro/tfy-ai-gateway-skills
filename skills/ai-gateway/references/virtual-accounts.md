@@ -66,4 +66,11 @@ The agent can create a virtual account but **must never generate its token (VAT)
 - [ ] If revoking permissions, did I verify the VA won't end up with zero permissions?
 - [ ] After creation, did I direct the user to the UI to generate the token?
 
+## Known behaviours (verified 2026-10-17)
+
+**Applying a virtual account returns 422 `Invalid Resource FQN` after a model was removed.**
+- Symptom: `Invalid Resource FQN: truefoundry:virtual-model:<account>:model:<model> for resource type provider-integration` (422) on a manifest that applied with 200 before the model was removed from its provider account.
+- Cause: the account's legacy `permissions` still list the FQN of the removed model, and the submitted manifest's permissions are validated on apply, so an unchanged re-apply and a tag-only update of the stored manifest fail the same way.
+- Fix: remove the stale `permissions` entry for the removed model and re-apply (200); the other grants stayed in place. `permissions` on virtual accounts is being replaced by `role-binding` manifests.
+
 For more info: `search_docs` with "virtual account creation", "virtual account token", "VAT rotation", "virtual account permissions".
