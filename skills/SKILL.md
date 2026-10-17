@@ -122,6 +122,8 @@ Throughout the platform, `policy` and `configuration` mean the same thing and ar
   - MCP Servers (including Virtual) are identified by their `name` (unique in a tenant).
 - **Policies**: Rate Limiting, Budget Limiting, Guardrails Config, Load Balancing (deprecated → use Virtual Models).
 
+- For a task that matches a common customer pattern (routing by audience, per-user cost on a shared app, guardrails by tier, budgets for coding agents, failover, request tracing, Bedrock inference profiles), read `ai-gateway/references/worked-patterns.md` first; it links the exact docs for each step.
+
 **If your answer will mention, use, or explain any entity or policy below, read its reference file first** — no matter how the question was phrased, and before starting any operation. Do not skip this step. Paths are under `ai-gateway/references/`.
 
 | **Entity** or Policy | File |
